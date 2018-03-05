@@ -13,7 +13,7 @@
 
 
 
-// type oznacza rodzaj kalibracji
+
 MainWindow::MainWindow(unsigned char type, QWidget *parent ) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
