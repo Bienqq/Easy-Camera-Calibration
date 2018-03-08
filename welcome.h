@@ -6,12 +6,11 @@
 
 
 class  MainWindow;
-
+enum CalibTypes {CHESSBOARD, CIRCLESBOARD, CHARUCOBOARD};
 
 namespace Ui
 {
     class Welcome;
-
 }
 
 class Welcome : public QDialog

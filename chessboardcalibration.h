@@ -12,9 +12,8 @@ public:
 
     void setElementDimension(double) override ;
     double getElementDimension() override;
-    bool foundAndDraw(cv::Mat&,cv::Mat&)override ;
-    void cameraCalibration(std::vector<cv::Mat>&) override;
-
+    bool foundAndDraw(cv::Mat&,cv::Mat&, bool)override ;
+    bool cameraCalibration(std::vector<cv::Mat>&) override;
     void getChessboardCorners(std::vector<cv::Mat>&, std::vector<std::vector<cv::Point2f> > &);
     void createKnownBoardPosition(std::vector<cv::Point3f>&);
 

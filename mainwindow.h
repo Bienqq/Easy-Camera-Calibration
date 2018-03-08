@@ -7,6 +7,7 @@
 
 
 
+
 #include <opencv2/opencv.hpp>
 
 class Welcome;
@@ -22,7 +23,7 @@ class MainWindow : public QMainWindow
     Q_OBJECT
 
 public:
-    explicit MainWindow (unsigned char CalibType, QWidget *parent = 0);
+    explicit MainWindow (unsigned int CalibType, QWidget *parent = 0);
 
     ~MainWindow();
 
@@ -40,11 +41,11 @@ private:
     bool open_Camera(int); // function to openCamera with appropriate index
     Ui::MainWindow *ui;
     cv::Mat matOriginal;   // Mat object in OpenCV style
+    cv::Mat matDrawn;
     QImage qimgOriginal;            // Image in Qt stye
     QTimer* tmrTimer;       // timer
     int camera_index = 0;  // currently running camera
-    cv::Mat cameraMatrix;
-    cv::Mat distanceCoefficients;
+    QString patternName;
 
 public slots:
     void processFrameAndUpdateGUI();

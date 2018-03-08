@@ -1,8 +1,6 @@
 #include "chessboardcalibration.h"
 #include "opencv2/imgproc.hpp"
 #include "opencv2/calib3d.hpp"
-#include <QDebug>
-
 
 ChessboardCalibration::ChessboardCalibration()
     :Calibrate()
@@ -12,15 +10,16 @@ ChessboardCalibration::ChessboardCalibration()
 }
 
 
-bool ChessboardCalibration::foundAndDraw(cv::Mat& frame, cv::Mat& outputFrame)
+bool ChessboardCalibration::foundAndDraw(cv::Mat& frame, cv::Mat& outputFrame, bool showResult)
 {
-
-    found = cv::findChessboardCorners(frame, dimensions, foundPoints, CV_CALIB_CB_FAST_CHECK |CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE );
-    drawChessboardCorners(frame, dimensions, foundPoints, found); // drawing corners
-    qDebug()<<"found:"<<found;
-    if (found)
+    bool found = cv::findChessboardCorners(frame, dimensions, foundPoints, CV_CALIB_CB_FAST_CHECK);
+    if(showResult == true)
     {
-        cv::putText(frame,"Chessboard was found", cv::Point2i(20,40), CV_FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0x00, 0xff, 0x00), 3);
+        cv::drawChessboardCorners(frame, dimensions, foundPoints, found); // drawing corners
+    }
+    if (found == true)
+    {
+        cv::putText(frame, "Chessboard was found", cv::Point2i(20,40), CV_FONT_HERSHEY_SIMPLEX, 1, cv::Scalar(0x00, 0xff, 0x00), 3);
         outputFrame = frame;
         return true;
     }
@@ -34,21 +33,15 @@ bool ChessboardCalibration::foundAndDraw(cv::Mat& frame, cv::Mat& outputFrame)
 
 void ChessboardCalibration::getChessboardCorners(std::vector<cv::Mat>& images,  std::vector<std::vector<cv::Point2f>>& allFoundCorners)
 {
-    bool ok = false;
-    qDebug()<<"Capacity:"<<images.capacity();
     for (std::vector<cv::Mat>::iterator iter = images.begin(); iter != images.end(); iter++)
     {
+        cv::cvtColor(*iter, *iter, CV_BGR2GRAY);
         std::vector<cv::Point2f> pointBuf;
-        //iter->convertTo(*iter, CV_8UC3);
-        qDebug()<<"iter->empty()"<<iter->empty();
-
-
-        qDebug()<<"wykonanie funkcji findChessboardCorners"<<cv::findChessboardCorners(*iter,dimensions, pointBuf, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE);
-        //cv::cornerSubPix(*iter, pointBuf, cv::Size(11,11), cv::Size(-1,-1),
-       //cv::TermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 30, 0.1));
-       // qDebug()<<"ok:"<<ok;
-        if(ok) allFoundCorners.push_back(pointBuf);
-
+        cv::findChessboardCorners(*iter,dimensions, pointBuf, CV_CALIB_CB_ADAPTIVE_THRESH | CV_CALIB_CB_NORMALIZE_IMAGE);
+        // to provide better accuracy calling cornerSubPix
+        cv::cornerSubPix(*iter, pointBuf, cv::Size(11,11), cv::Size(-1,-1),
+        cv::TermCriteria(CV_TERMCRIT_EPS+CV_TERMCRIT_ITER, 30, 0.1)); // calibration criteria taken from OpenCV source code
+        allFoundCorners.push_back(pointBuf);
     }
 }
 
@@ -63,19 +56,15 @@ void ChessboardCalibration::createKnownBoardPosition( std::vector<cv::Point3f>& 
     }
 }
 
-void ChessboardCalibration::cameraCalibration(std::vector<cv::Mat> &calibrationImages)
+bool ChessboardCalibration::cameraCalibration(std::vector<cv::Mat> &calibrationImages)
 {
     std::vector<std::vector<cv::Point2f>> imagePoints;
-    std::vector<std::vector<cv::Point3f>>	objectPoints(1);
+    std::vector<std::vector<cv::Point3f>> objectPoints(1);
     getChessboardCorners(calibrationImages, imagePoints);
-
     createKnownBoardPosition(objectPoints[0]);
-
     objectPoints.resize(imagePoints.size(), objectPoints[0]);
-    qDebug()<<"Calibration startet";
-    qDebug()<< objectPoints.empty();
     cv::calibrateCamera(objectPoints, imagePoints, dimensions, cameraMatrix, distanceCoefficients, rVectors, tVectors);
-    qDebug()<<"Calibration finished";
+    return true;
 }
 
 double ChessboardCalibration::getElementDimension()

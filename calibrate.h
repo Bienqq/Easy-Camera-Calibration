@@ -15,18 +15,18 @@ public:
     cv::Size getDimensions();
     void setWidth(int);
     void setHeight(int);
-    bool getFound();
+    QString getDistanceCoefficientsQString();
+    QString getCameraMatrixQString();
 
     ~Calibrate();
     Calibrate();
     virtual double getElementDimension() = 0;
     virtual void setElementDimension(double) = 0;
-    virtual bool foundAndDraw(cv::Mat&,cv::Mat&) = 0;
-    virtual void cameraCalibration(std::vector<cv::Mat>&) = 0;
+    virtual bool foundAndDraw(cv::Mat&,cv::Mat&, bool) = 0;
+    virtual bool cameraCalibration(std::vector<cv::Mat>&) = 0;
 
 protected:
     cv::Size dimensions;
-    bool found = false;
     std::vector<cv::Vec2f> foundPoints;
     std::vector<cv::Mat> rVectors, tVectors;
     cv::Mat distanceCoefficients = cv::Mat::zeros(8, 1, CV_64F);

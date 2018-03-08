@@ -19,15 +19,10 @@ Welcome::~Welcome()
 
 void Welcome::on_chessBoardButton_clicked()
 {
-    mainWindow = new MainWindow(0,this);
+    mainWindow = new MainWindow(CHESSBOARD,this);
     this->hide();
     mainWindow->show();
-
-    qDebug()<<"Stworzono i pokazano mainWindow";
-
     connect(mainWindow, SIGNAL(signalBackToMenu()), this, SLOT(back()));
-
-    qDebug()<<"Polonczono nowy powstaly obiekt z oknem powitalnym";
 }
 
 void Welcome::on_chArucoBoardButton_clicked()
@@ -45,6 +40,4 @@ void Welcome::back()
     mainWindow->close();
     this->show();
     delete mainWindow;
-
-    qDebug()<<"Zwolnienie pamieci";
 }

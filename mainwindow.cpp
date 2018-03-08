@@ -6,6 +6,11 @@
 #include <QCameraInfo>
 #include <QList>
 #include <QDebug>
+#include <QDir>
+#include <QDialogButtonBox>
+#include <QFileDialog>
+#include "saveresult.h"
+
 #include "welcome.h"
 #include "chessboardcalibration.h"
 #include <opencv2/imgproc/imgproc.hpp>
@@ -14,7 +19,7 @@
 
 
 
-MainWindow::MainWindow(unsigned char type, QWidget *parent ) :
+MainWindow::MainWindow(unsigned int type, QWidget *parent ) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
@@ -32,9 +37,18 @@ MainWindow::MainWindow(unsigned char type, QWidget *parent ) :
     connect(ui->backToMenu, SIGNAL(clicked()), this, SLOT(on_backToMenu_clicked()) );
     connect(tmrTimer, SIGNAL(timeout()), this, SLOT(processFrameAndUpdateGUI()));
 
-    if(type == 0) // type 0 means Chessboard Patterm
+    if(type == CHESSBOARD) // type 0 means Chessboard Patterm
     {
+        patternName = "CHESSBOARD";
         CalibrationObject = new ChessboardCalibration();
+    }
+    else if(type == CIRCLESBOARD)
+    {
+        patternName = "CIRCLESBOARD";
+    }
+    else
+    {
+        patternName = "CHARUCOBOARD";
     }
     on_tryAgain_clicked();
 }
@@ -52,19 +66,19 @@ void MainWindow::processFrameAndUpdateGUI()
         on_tryAgain_clicked();
         return;
     }
+    matOriginal.copyTo(matDrawn);
     // reading frame
-
     if(calibButtonClicked == true )
     {
-        CalibrationObject->foundAndDraw(matOriginal, matOriginal);
+        CalibrationObject->foundAndDraw(matDrawn, matDrawn, true);
     }
     if(savedImagesNumber < 15)
     {
         ui->calibrateCameraButton->setDisabled(true);
     }
     //convert Mat to QImage
-    cv::cvtColor(matOriginal, matOriginal, CV_BGR2RGB);
-    QImage qimgOriginal(matOriginal.data, matOriginal.cols, matOriginal.rows, matOriginal.step, QImage::Format_RGB888);                                                         
+    cv::cvtColor(matDrawn, matDrawn, CV_BGR2RGB);
+    QImage qimgOriginal(matDrawn.data, matDrawn.cols, matDrawn.rows, matDrawn.step, QImage::Format_RGB888);
     ui->lblOriginal->setPixmap(QPixmap::fromImage(qimgOriginal));
 }
 
@@ -80,9 +94,10 @@ void MainWindow::on_tryAgain_clicked() //counting avaliable cameras
     {
         temp++;
     }
-    this->MAX_CAMERA_NUMBER = temp;
+    MAX_CAMERA_NUMBER = temp;
 
-    if( this->MAX_CAMERA_NUMBER != 0 )
+    // if any camera is avaliable
+    if( MAX_CAMERA_NUMBER != 0 )
     {
         capWebcam.open(0);
         cameraWasOpened = true;
@@ -90,7 +105,7 @@ void MainWindow::on_tryAgain_clicked() //counting avaliable cameras
         ui->noConnected->hide();
         tmrTimer->start(20);
     }
-    else
+    else  // if not
     {
         cameraWasOpened = false;
         QMessageBox::critical(this, "Critical error", "Cannot open camera. Please check your camera connection.");
@@ -113,27 +128,24 @@ bool MainWindow::open_Camera(int camera_index)
 
 void MainWindow::on_nextButton_clicked()
 {
-    if(this->MAX_CAMERA_NUMBER != 0 && this->camera_index < (this->MAX_CAMERA_NUMBER - 1))
+    if(MAX_CAMERA_NUMBER != 0 && camera_index < (MAX_CAMERA_NUMBER - 1))
     {
-       this->camera_index++;
-       open_Camera(this->camera_index);
-       qDebug()<<this->camera_index;
+       camera_index++;
+       open_Camera(camera_index);
     }
 }
 
 void MainWindow::on_previousButton_clicked()
 {
-    if(this->MAX_CAMERA_NUMBER != 0 && this->camera_index >0)
+    if(MAX_CAMERA_NUMBER != 0 && camera_index >0)
     {
-       this->camera_index--;
-       open_Camera(this->camera_index);
-       qDebug()<<this->camera_index;
+       camera_index--;
+       open_Camera(camera_index);
     }
 }
 
 void MainWindow::on_backToMenu_clicked()
 {
-    qDebug()<<"przycisk powrotu klikniety ";
     emit signalBackToMenu();
 }
 
@@ -152,8 +164,7 @@ void MainWindow::on_calibrationButton_clicked()
         ui->nextButton->setDisabled(true);
         ui->previousButton->setDisabled(true);
         ui->squareDimensions->setDisabled(true);
-        qDebug()<<"Calibration Started";
-        calibButtonClicked = !calibButtonClicked;
+        calibButtonClicked = true;
     }
     else if(cameraWasOpened == false)
     {
@@ -187,8 +198,7 @@ void MainWindow::on_calibrationButton_clicked()
          savedImagesNumber = 0;
          ui->savedNumbers->setText(QString::number(savedImagesNumber));
          calibrationImages.clear();
-         qDebug()<<"Calibration Stoped";
-         calibButtonClicked = !calibButtonClicked;
+         calibButtonClicked = false;
     }
 
 }
@@ -197,25 +207,21 @@ void MainWindow::on_height_valueChanged(int arg1)
 {
     CalibrationObject->setHeight(arg1);
     heightWasSet = true;
-    qDebug()<<CalibrationObject->getDimensions().height;
 }
 
 void MainWindow::on_width_valueChanged(int arg1)
 {
     CalibrationObject->setWidth(arg1);
     widthWasSet = true;
-    qDebug()<<CalibrationObject->getDimensions().width;
 }
 
 void MainWindow::on_saveFrameButton_clicked()
 {
-    if(CalibrationObject->foundAndDraw(matOriginal, matOriginal) == true)
+    if(CalibrationObject->foundAndDraw(matOriginal, matOriginal, false) == true)
     {
-        cv::Mat temp;
         savedImagesNumber++;
         ui->savedNumbers->setText(QString::number(savedImagesNumber));
-        matOriginal.copyTo(temp);
-        calibrationImages.push_back(temp);
+        calibrationImages.push_back(matOriginal);
         if(savedImagesNumber >= 15)
         {
             ui->calibrateCameraButton->setEnabled(true);
@@ -223,7 +229,7 @@ void MainWindow::on_saveFrameButton_clicked()
     }
     else
     {
-     QMessageBox::information(this,"Info", "Saving images have to contain an image of chessboard");
+     QMessageBox::information(this, "Info", "Saving images have to contain an image of chessboard");
     }
 }
 
@@ -231,6 +237,40 @@ void MainWindow::on_calibrateCameraButton_clicked()
 {
     calibButtonClicked = false;
     CalibrationObject->cameraCalibration(calibrationImages);
+    ui->calibrationButton->setText("Start Calibration");
+    ui->saveFrameButton->hide();
+    ui->savedImages->hide();
+    ui->savedNumbers->hide();
+    ui->height->setEnabled(true);
+    ui->width->setEnabled(true);
+    ui->previousButton->setEnabled(true);
+    ui->nextButton->setEnabled(true);
+    ui->squareDimensions->setEnabled(true);
+    calibrationImages.clear();
+    calibButtonClicked = false;
+    QMessageBox::StandardButton reply;
+    reply = QMessageBox::question(this, "Info", "Camera calibration process has been successfully completed", QMessageBox::Save | QMessageBox::Cancel);
+    if(reply == QDialogButtonBox::Save)
+    {
+        QString filter = "XML File (*.xml)";
+        QString fileName = QFileDialog::getSaveFileName(this,"Save a XML file", QDir::homePath(), filter);
+        QFile fileXML(fileName);
+        fileXML.open(QIODevice ::WriteOnly);
+        QXmlStreamWriter xmlWriter(&fileXML);
+        xmlWriter.setAutoFormatting(true);
+        xmlWriter.writeStartDocument();
+        xmlWriter.writeTextElement("Used Calibration Pattern","Used Calibration Pattern", patternName);
+        xmlWriter.writeTextElement("Number of frames","Number of frames", QString::number(savedImagesNumber));
+        xmlWriter.writeStartElement("Camera Parameters");
+        xmlWriter.writeTextElement("Camera Parameters","Camera Matrix", CalibrationObject->getCameraMatrixQString());
+        xmlWriter.writeTextElement("Camera Parameters","DistanceCoefficients", CalibrationObject->getDistanceCoefficientsQString());
+        xmlWriter.writeEndElement();
+        xmlWriter.writeEndDocument();
+        fileXML.close();
+    }
+    savedImagesNumber = 0;
+    ui->savedNumbers->setText(QString::number(savedImagesNumber));
+
 }
 
 void MainWindow::on_squareDimensions_valueChanged(double arg1)
