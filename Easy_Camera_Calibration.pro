@@ -36,14 +36,14 @@ SOURCES += \
     welcome.cpp \
     calibrate.cpp \
     chessboardcalibration.cpp \
-    saveresult.cpp
+    saveloadxml.cpp
 
 HEADERS += \
         mainwindow.h \
     welcome.h \
     calibrate.h \
     chessboardcalibration.h \
-    saveresult.h
+    saveloadxml.h
 
 FORMS += \
         mainwindow.ui \

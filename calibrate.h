@@ -2,13 +2,14 @@
 #define CALIBRATE_H
 
 #include "opencv2/highgui.hpp"
-#include <QtXml>
+#include <QString>
+#include <QObject>
 
 
-
-
-class Calibrate
+class Calibrate : public QObject
 {
+
+    Q_OBJECT
 
 public:
 
@@ -29,9 +30,12 @@ protected:
     cv::Size dimensions;
     std::vector<cv::Vec2f> foundPoints;
     std::vector<cv::Mat> rVectors, tVectors;
+    cv::Mat drawToFrame; //frame with chessboard pattern
     cv::Mat distanceCoefficients = cv::Mat::zeros(8, 1, CV_64F);
     cv::Mat cameraMatrix = cv::Mat::eye(3, 3, CV_64F);
-    cv::Mat drawToFrame; //frame with chessboard pattern
+
+
+
 
 };
 

@@ -5,11 +5,13 @@
 
 
 
-class  MainWindow;
-enum CalibTypes {CHESSBOARD, CIRCLESBOARD, CHARUCOBOARD};
+
+
+class MainWindow;
 
 namespace Ui
 {
+
     class Welcome;
 }
 

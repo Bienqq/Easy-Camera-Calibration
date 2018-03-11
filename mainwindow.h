@@ -4,29 +4,31 @@
 #include <QMainWindow>
 #include <QTimer>
 #include "calibrate.h"
-
-
-
-
 #include <opencv2/opencv.hpp>
 
-class Welcome;
 
+
+
+namespace Calibration
+{
+    enum CalibTypes {CHESSBOARD, CIRCLESBOARD, CHARUCOBOARD};
+}
 
 namespace Ui
 {
     class MainWindow;
 }
 
+class Welcome;
+
 class MainWindow : public QMainWindow
 {
     Q_OBJECT
 
 public:
-    explicit MainWindow (unsigned int CalibType, QWidget *parent = 0);
+    explicit MainWindow (Calibration::CalibTypes, QWidget *parent = 0);
 
     ~MainWindow();
-
 
 private:
     int savedImagesNumber = 0;
@@ -49,7 +51,8 @@ private:
 
 public slots:
     void processFrameAndUpdateGUI();
-
+    void on_tryAgain_clicked(); //button to re-enable the image from the camera
+    void on_nextButton_clicked();
     void on_backToMenu_clicked();
 
 signals:
@@ -58,8 +61,6 @@ signals:
 
 private slots:
 
-    void on_tryAgain_clicked(); //button to re-enable the image from the camera
-    void on_nextButton_clicked();
     void on_previousButton_clicked();
     void on_calibrationButton_clicked();
     void on_height_valueChanged(int arg1);

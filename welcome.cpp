@@ -19,7 +19,7 @@ Welcome::~Welcome()
 
 void Welcome::on_chessBoardButton_clicked()
 {
-    mainWindow = new MainWindow(CHESSBOARD,this);
+    mainWindow = new MainWindow(Calibration::CHESSBOARD, this);
     this->hide();
     mainWindow->show();
     connect(mainWindow, SIGNAL(signalBackToMenu()), this, SLOT(back()));

@@ -1,25 +1,23 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
-
-
 #include <QMessageBox>
 #include <QCameraInfo>
 #include <QList>
 #include <QDebug>
-#include <QDir>
-#include <QDialogButtonBox>
 #include <QFileDialog>
-#include "saveresult.h"
+#include <QDialogButtonBox>
+
 
 #include "welcome.h"
 #include "chessboardcalibration.h"
 #include <opencv2/imgproc/imgproc.hpp>
 #include <opencv2/opencv.hpp>
+#include "saveloadxml.h"
 
 
 
 
-MainWindow::MainWindow(unsigned int type, QWidget *parent ) :
+MainWindow::MainWindow(Calibration::CalibTypes type, QWidget *parent ) :
     QMainWindow(parent),
     ui(new Ui::MainWindow)
 {
@@ -34,15 +32,15 @@ MainWindow::MainWindow(unsigned int type, QWidget *parent ) :
     tmrTimer = new QTimer(this); //creating new timer
 
 
-    connect(ui->backToMenu, SIGNAL(clicked()), this, SLOT(on_backToMenu_clicked()) );
+    connect(ui->backToMenu, SIGNAL(clicked()), this, SLOT(on_backToMenu_clicked()));
     connect(tmrTimer, SIGNAL(timeout()), this, SLOT(processFrameAndUpdateGUI()));
 
-    if(type == CHESSBOARD) // type 0 means Chessboard Patterm
+    if(type == Calibration::CHESSBOARD) // type 0 means Chessboard Patterm
     {
         patternName = "CHESSBOARD";
         CalibrationObject = new ChessboardCalibration();
     }
-    else if(type == CIRCLESBOARD)
+    else if(type == Calibration::CIRCLESBOARD)
     {
         patternName = "CIRCLESBOARD";
     }
@@ -78,7 +76,7 @@ void MainWindow::processFrameAndUpdateGUI()
     }
     //convert Mat to QImage
     cv::cvtColor(matDrawn, matDrawn, CV_BGR2RGB);
-    QImage qimgOriginal(matDrawn.data, matDrawn.cols, matDrawn.rows, matDrawn.step, QImage::Format_RGB888);
+    QImage qimgOriginal(matDrawn.data, static_cast<int>(matDrawn.cols), static_cast<int>(matDrawn.rows), static_cast<int>(matDrawn.step), QImage::Format_RGB888);
     ui->lblOriginal->setPixmap(QPixmap::fromImage(qimgOriginal));
 }
 
@@ -252,25 +250,11 @@ void MainWindow::on_calibrateCameraButton_clicked()
     reply = QMessageBox::question(this, "Info", "Camera calibration process has been successfully completed", QMessageBox::Save | QMessageBox::Cancel);
     if(reply == QDialogButtonBox::Save)
     {
-        QString filter = "XML File (*.xml)";
-        QString fileName = QFileDialog::getSaveFileName(this,"Save a XML file", QDir::homePath(), filter);
-        QFile fileXML(fileName);
-        fileXML.open(QIODevice ::WriteOnly);
-        QXmlStreamWriter xmlWriter(&fileXML);
-        xmlWriter.setAutoFormatting(true);
-        xmlWriter.writeStartDocument();
-        xmlWriter.writeTextElement("Used Calibration Pattern","Used Calibration Pattern", patternName);
-        xmlWriter.writeTextElement("Number of frames","Number of frames", QString::number(savedImagesNumber));
-        xmlWriter.writeStartElement("Camera Parameters");
-        xmlWriter.writeTextElement("Camera Parameters","Camera Matrix", CalibrationObject->getCameraMatrixQString());
-        xmlWriter.writeTextElement("Camera Parameters","DistanceCoefficients", CalibrationObject->getDistanceCoefficientsQString());
-        xmlWriter.writeEndElement();
-        xmlWriter.writeEndDocument();
-        fileXML.close();
+       SaveLoadXML save;
+       save.saveData(CalibrationObject, patternName, savedImagesNumber, this);
     }
     savedImagesNumber = 0;
     ui->savedNumbers->setText(QString::number(savedImagesNumber));
-
 }
 
 void MainWindow::on_squareDimensions_valueChanged(double arg1)
